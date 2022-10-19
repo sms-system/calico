@@ -499,7 +499,7 @@ func (r *ReleaseBuilder) assertManifestVersions(ver string) error {
 				continue
 			}
 			if !strings.HasSuffix(i, ver) {
-				return fmt.Errorf("Incorrect image version: %s", i)
+				return fmt.Errorf("Incorrect image version (expected %s): %s", ver, i)
 			}
 		}
 	}
