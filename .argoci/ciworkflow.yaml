@@ -1,0 +1,106 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: calico-ci-
+  labels:
+    repo: calico
+    type: CI
+    branch: tsla-3401
+spec:
+  entrypoint: all-steps
+  arguments:
+    parameters:
+      - name: reponame
+        default: calico
+      - name: repoURL
+        default: git@github.com:projectcalico/calico.git
+      - name: branch
+        default: tsla-3401
+  templateDefaults:
+    inputs:
+      artifacts:
+        - name: clone-repo
+          path: "/src/calico"
+          git:
+            repo: "{{workflow.parameters.repoURL}}"
+            revision: "{{workflow.parameters.branch}}"
+            sshPrivateKeySecret:
+              name: github-access
+              key: sshprivatekey
+    podSpecPatch: |-
+      containers:
+        - name: main
+          env:
+            - name: CI_HOME
+              value: /src
+            - name: CI_GIT_DIR
+              value: calico
+            - name: CI_ARTIFACT_STORAGE
+              value: gs://argoci-artifacts/{{workflow.name}}
+            - name: CI_ARTIFACT_STEP_STORAGE
+              value: gs://argoci-artifacts/{{workflow.name}}/{{tasks.name}}
+          envFrom: docker-hub
+  templates:
+    - name: all-steps
+      dag:
+        tasks:
+          - name: prerequisites
+            template: preflight-checks-runner
+          - name: node-tests
+            depends: "prerequisites"
+            template: node-tests-runner
+            arguments:
+              parameters:
+                - name: make-command
+                  value: "{{item.MAKE_CMD}}"
+                - name: report-file
+                  value: "{{item.REPORT_FILE}}"
+            withItems:
+              - {"MAKE_CMD": "ci", "REPORT_FILE": "nosetests.xml"}
+              - {"MAKE_CMD": "k8s-test", "REPORT_FILE": "k8s-tests.xml"}
+
+    - name: preflight-checks-runner
+      script:
+        image: gcr.io/tigera-cc-dev/ci-base/ubuntu-cloud-providers:v0.5
+        command: [bash]
+        workingDir: "/src/{{inputs.parameters.reponame}}"
+        source: |
+          CI_EXIT_CODE=0
+          source .argoci/scripts/global_prologue.sh
+          make ci-preflight-checks || CI_EXIT_CODE=1
+          .argoci/scripts/global_epilogue.sh
+          exit ${CI_EXIT_CODE}
+
+    - name: node-tests-runner
+      inputs:
+        parameters:
+          - name: make-command
+          - name: report-file
+      script:
+        image: gcr.io/tigera-cc-dev/ci-base/ubuntu-cloud-providers:v0.5
+        command: [bash]
+        workingDir: "/src/{{inputs.parameters.reponame}}"
+        source: |
+          CI_EXIT_CODE=0
+          source .argoci/scripts/global_prologue.sh
+          cd node
+          ../.argoci/scripts/run-and-monitor {{inputs.parameters.make-command}}.log make {{inputs.parameters.make-command}} || CI_EXIT_CODE=1
+          gsutil cp "./report/{{inputs.parameters.report-file}}" "${CI_ARTIFACT_STEP_STORAGE}/node-{{inputs.parameters.make-command}}"
+          .argoci/scripts/global_epilogue.sh
+          exit ${CI_EXIT_CODE}
+        volumeMounts:
+          - name: src
+            mountPath: /src
+      volumes:
+        - name: src
+          emptyDir: { }
+      sidecars:
+        - name: dind
+          image: docker:20.10.17-dind
+          command: [dockerd-entrypoint.sh]
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          securityContext:
+            privileged: true
+          mirrorVolumeMounts: true
