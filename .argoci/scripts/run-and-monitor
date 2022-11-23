@@ -16,7 +16,7 @@
 
 set -e
 
-num_unfiltered_lines=1000
+num_unfiltered_lines=100000
 log_monitor_regexps=(
   "Failure"
   "FAIL"
