@@ -26,7 +26,7 @@ log_monitor_regexps=(
 
 echo "Current dir: $(pwd)"
 my_dir="$(dirname $0)"
-repo_dir="${my_dir}/.."
+repo_dir="${my_dir}/../.."
 artifacts_dir="$repo_dir/artifacts"
 log_file_name="$1"
 log_file="${artifacts_dir}/$1"

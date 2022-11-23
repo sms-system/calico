@@ -63,15 +63,35 @@ spec:
 
     - name: preflight-checks-runner
       script:
-        image: gcr.io/tigera-cc-dev/ci-base/ubuntu-cloud-providers:v0.5
+        image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:v0.1
         command: [bash]
         workingDir: "/src/{{workflow.parameters.reponame}}"
+        env:
+          - name: DOCKER_HOST
+            value: tcp://127.0.0.1:2375
         source: |
           CI_EXIT_CODE=0
           source .argoci/scripts/global_prologue.sh
+          until docker ps; do sleep 5; done
           make ci-preflight-checks || CI_EXIT_CODE=1
           .argoci/scripts/global_epilogue.sh
           exit ${CI_EXIT_CODE}
+        volumeMounts:
+          - name: src
+            mountPath: /src
+      volumes:
+        - name: src
+          emptyDir: { }
+      sidecars:
+        - name: dind
+          image: docker:20.10.17-dind
+          command: [dockerd-entrypoint.sh]
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          securityContext:
+            privileged: true
+          mirrorVolumeMounts: true
 
     - name: node-tests-runner
       inputs:
@@ -79,9 +99,12 @@ spec:
           - name: make-command
           - name: report-file
       script:
-        image: gcr.io/tigera-cc-dev/ci-base/ubuntu-cloud-providers:v0.5
+        image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:v0.1
         command: [bash]
         workingDir: "/src/{{workflow.parameters.reponame}}"
+        env:
+          - name: DOCKER_HOST
+            value: tcp://127.0.0.1:2375
         source: |
           CI_EXIT_CODE=0
           source .argoci/scripts/global_prologue.sh
