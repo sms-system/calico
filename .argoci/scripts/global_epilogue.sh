@@ -7,7 +7,7 @@ shopt -s nullglob
 cd "${REPO_DIR}"
 
 my_dir=$(dirname "$0")
-repo_dir=$my_dir/..
+repo_dir=$my_dir/../..
 
 cd "$repo_dir/artifacts" || exit 1
 

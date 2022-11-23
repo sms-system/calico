@@ -5,17 +5,17 @@ metadata:
   labels:
     repo: calico
     type: CI
-    branch: tsla-3401
+    branch: argoci-testing
 spec:
   entrypoint: all-steps
   arguments:
     parameters:
       - name: reponame
-        default: calico
+        value: calico
       - name: repoURL
-        default: git@github.com:projectcalico/calico.git
+        value: git@github.com:projectcalico/calico.git
       - name: branch
-        default: tsla-3401
+        value: argoci-testing
   templateDefaults:
     inputs:
       artifacts:
@@ -39,7 +39,9 @@ spec:
               value: gs://argoci-artifacts/{{workflow.name}}
             - name: CI_ARTIFACT_STEP_STORAGE
               value: gs://argoci-artifacts/{{workflow.name}}/{{tasks.name}}
-          envFrom: docker-hub
+          envFrom: 
+            - secretRef:
+                name: docker-hub
   templates:
     - name: all-steps
       dag:
@@ -63,7 +65,7 @@ spec:
       script:
         image: gcr.io/tigera-cc-dev/ci-base/ubuntu-cloud-providers:v0.5
         command: [bash]
-        workingDir: "/src/{{inputs.parameters.reponame}}"
+        workingDir: "/src/{{workflow.parameters.reponame}}"
         source: |
           CI_EXIT_CODE=0
           source .argoci/scripts/global_prologue.sh
@@ -79,11 +81,12 @@ spec:
       script:
         image: gcr.io/tigera-cc-dev/ci-base/ubuntu-cloud-providers:v0.5
         command: [bash]
-        workingDir: "/src/{{inputs.parameters.reponame}}"
+        workingDir: "/src/{{workflow.parameters.reponame}}"
         source: |
           CI_EXIT_CODE=0
           source .argoci/scripts/global_prologue.sh
           cd node
+          until docker ps; do sleep 5; done
           ../.argoci/scripts/run-and-monitor {{inputs.parameters.make-command}}.log make {{inputs.parameters.make-command}} || CI_EXIT_CODE=1
           gsutil cp "./report/{{inputs.parameters.report-file}}" "${CI_ARTIFACT_STEP_STORAGE}/node-{{inputs.parameters.make-command}}"
           .argoci/scripts/global_epilogue.sh
