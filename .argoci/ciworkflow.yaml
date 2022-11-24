@@ -42,6 +42,8 @@ spec:
           envFrom: 
             - secretRef:
                 name: docker-hub
+            - secretRef:
+                name: marvin-github-ssh-private-key
   templates:
     - name: all-steps
       dag:
@@ -75,7 +77,7 @@ spec:
           source .argoci/scripts/global_prologue.sh
           until docker ps; do sleep 5; done
           make ci-preflight-checks || CI_EXIT_CODE=1
-          .argoci/scripts/global_epilogue.sh
+          /src/calico/.argoci/scripts/global_epilogue.sh
           exit ${CI_EXIT_CODE}
         volumeMounts:
           - name: src
@@ -114,7 +116,7 @@ spec:
           until docker ps; do sleep 5; done
           ../.argoci/scripts/run-and-monitor {{inputs.parameters.make-command}}.log make {{inputs.parameters.make-command}} || CI_EXIT_CODE=1
           gsutil cp "./report/{{inputs.parameters.report-file}}" "${CI_ARTIFACT_STEP_STORAGE}/node-{{inputs.parameters.make-command}}"
-          .argoci/scripts/global_epilogue.sh
+          /src/calico/.argoci/scripts/global_epilogue.sh
           exit ${CI_EXIT_CODE}
         volumeMounts:
           - name: src
@@ -124,7 +126,7 @@ spec:
           ephemeral:
             volumeClaimTemplate:
               spec:
-                accessModes: [ "ReadWriteOnce" ]
+                accessModes: [ "ReadWriteMany" ]
                 resources:
                   requests:
                     storage: 50Gi
