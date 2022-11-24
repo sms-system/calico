@@ -39,6 +39,8 @@ spec:
               value: gs://argoci-artifacts/{{workflow.name}}
             - name: CI_ARTIFACT_STEP_STORAGE
               value: gs://argoci-artifacts/{{workflow.name}}/{{tasks.name}}
+            - name: DOCKER_HOST
+              value: tcp://127.0.0.1:2375
           envFrom: 
             - secretRef:
                 name: docker-hub
@@ -69,12 +71,10 @@ spec:
         imagePullPolicy: Always
         command: [bash]
         workingDir: "/src/{{workflow.parameters.reponame}}"
-        env:
-          - name: DOCKER_HOST
-            value: tcp://127.0.0.1:2375
         source: |
           CI_EXIT_CODE=0
           source .argoci/scripts/global_prologue.sh
+          git clone -v git@github.com:kubernetes-csi/node-driver-registrar.git
           until docker ps; do sleep 5; done
           make ci-preflight-checks || CI_EXIT_CODE=1
           /src/calico/.argoci/scripts/global_epilogue.sh
@@ -106,9 +106,6 @@ spec:
         imagePullPolicy: Always
         command: [bash]
         workingDir: "/src/{{workflow.parameters.reponame}}"
-        env:
-          - name: DOCKER_HOST
-            value: tcp://127.0.0.1:2375
         source: |
           CI_EXIT_CODE=0
           source .argoci/scripts/global_prologue.sh
@@ -126,7 +123,7 @@ spec:
           ephemeral:
             volumeClaimTemplate:
               spec:
-                accessModes: [ "ReadWriteMany" ]
+                accessModes: [ "ReadWriteOnce" ]
                 resources:
                   requests:
                     storage: 50Gi
