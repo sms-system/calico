@@ -22,6 +22,7 @@ spec:
         - name: clone-repo
           path: "/src/calico"
           mode: 0777
+          recurseMode: true
           git:
             repo: "{{workflow.parameters.repoURL}}"
             revision: "{{workflow.parameters.branch}}"
@@ -111,12 +112,16 @@ spec:
           ls -l /
           ls -l /src
           source .argoci/scripts/global_prologue.sh
+          ls -l /
+          ls -l /src
           cd node
           until docker ps; do sleep 5; done
           ../.argoci/scripts/run-and-monitor {{inputs.parameters.make-command}}.log make {{inputs.parameters.make-command}} || CI_EXIT_CODE=1
           gsutil cp "./report/{{inputs.parameters.report-file}}" "${CI_ARTIFACT_STEP_STORAGE}/node-{{inputs.parameters.make-command}}"
           /src/calico/.argoci/scripts/global_epilogue.sh
           exit ${CI_EXIT_CODE}
+        securityContext:
+          privileged: true
         volumeMounts:
           - name: src
             mountPath: /src
