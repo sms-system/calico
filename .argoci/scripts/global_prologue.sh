@@ -1,5 +1,8 @@
 #! /bin/bash -x
 
+echo "[INFO] generate a default id_rsa"
+ssh-keygen -t rsa -b 4096 -N '' -f ~/.ssh/id_rsa
+
 eval `ssh-agent -s`
 mkdir -p /root/.ssh
 touch /root/.ssh/known_hosts

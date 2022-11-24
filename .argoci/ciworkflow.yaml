@@ -64,6 +64,7 @@ spec:
     - name: preflight-checks-runner
       script:
         image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:v0.1
+        imagePullPolicy: Always
         command: [bash]
         workingDir: "/src/{{workflow.parameters.reponame}}"
         env:
@@ -100,6 +101,7 @@ spec:
           - name: report-file
       script:
         image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:v0.1
+        imagePullPolicy: Always
         command: [bash]
         workingDir: "/src/{{workflow.parameters.reponame}}"
         env:
