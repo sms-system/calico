@@ -21,6 +21,7 @@ spec:
       artifacts:
         - name: clone-repo
           path: "/src/calico"
+          mode: 0777
           git:
             repo: "{{workflow.parameters.repoURL}}"
             revision: "{{workflow.parameters.branch}}"
@@ -74,7 +75,6 @@ spec:
         source: |
           CI_EXIT_CODE=0
           source .argoci/scripts/global_prologue.sh
-          git clone -v git@github.com:kubernetes-csi/node-driver-registrar.git
           until docker ps; do sleep 5; done
           make ci-preflight-checks || CI_EXIT_CODE=1
           /src/calico/.argoci/scripts/global_epilogue.sh
@@ -108,6 +108,8 @@ spec:
         workingDir: "/src/{{workflow.parameters.reponame}}"
         source: |
           CI_EXIT_CODE=0
+          ls -l /
+          ls -l /src
           source .argoci/scripts/global_prologue.sh
           cd node
           until docker ps; do sleep 5; done

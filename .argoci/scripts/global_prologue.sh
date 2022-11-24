@@ -1,5 +1,5 @@
 #! /bin/bash
-set -x
+chmod a+w ${CI_HOME}
 
 echo "[INFO] generate a default id_rsa"
 ssh-keygen -t rsa -b 4096 -N '' -f ~/.ssh/id_rsa
