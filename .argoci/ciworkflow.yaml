@@ -17,18 +17,6 @@ spec:
       - name: branch
         value: argoci-testing
   templateDefaults:
-    inputs:
-      artifacts:
-        - name: clone-repo
-          path: "/src/calico"
-          mode: 0777
-          recurseMode: true
-          git:
-            repo: "{{workflow.parameters.repoURL}}"
-            revision: "{{workflow.parameters.branch}}"
-            sshPrivateKeySecret:
-              name: github-access
-              key: sshprivatekey
     podSpecPatch: |-
       containers:
         - name: main
@@ -43,6 +31,10 @@ spec:
               value: gs://argoci-artifacts/{{workflow.name}}/{{tasks.name}}
             - name: DOCKER_HOST
               value: tcp://127.0.0.1:2375
+            - name: CI_GIT_REPO_URL
+              value: {{workflow.parameters.repoURL}}
+            - name: CI_GIT_CLONED_BRANCH
+              value: {{workflow.parameters.branch}}
           envFrom: 
             - secretRef:
                 name: docker-hub
@@ -72,10 +64,14 @@ spec:
         image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:v0.1
         imagePullPolicy: Always
         command: [bash]
-        workingDir: "/src/{{workflow.parameters.reponame}}"
+        workingDir: "/src"
         source: |
           CI_EXIT_CODE=0
+          ls -l /
+          ls -l /src
           source .argoci/scripts/global_prologue.sh
+          ls -l /
+          ls -l /src
           until docker ps; do sleep 5; done
           make ci-preflight-checks || CI_EXIT_CODE=1
           /src/calico/.argoci/scripts/global_epilogue.sh
@@ -106,7 +102,7 @@ spec:
         image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:v0.1
         imagePullPolicy: Always
         command: [bash]
-        workingDir: "/src/{{workflow.parameters.reponame}}"
+        workingDir: "/src"
         source: |
           CI_EXIT_CODE=0
           ls -l /
