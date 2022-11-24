@@ -119,7 +119,13 @@ spec:
             mountPath: /src
       volumes:
         - name: src
-          emptyDir: { }
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: 50Gi
       sidecars:
         - name: dind
           image: docker:20.10.17-dind
