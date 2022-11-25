@@ -56,7 +56,7 @@ spec:
                 - name: report-file
                   value: "{{item.REPORT_FILE}}"
             withItems:
-              - {"MAKE_CMD": "ci", "REPORT_FILE": "nosetests.xml"}
+#              - {"MAKE_CMD": "ci", "REPORT_FILE": "nosetests.xml"}
               - {"MAKE_CMD": "k8s-test", "REPORT_FILE": "k8s-tests.xml"}
 
     - name: preflight-checks-runner
@@ -66,13 +66,9 @@ spec:
         command: [bash]
         workingDir: "/src"
         source: |
-          checkout
+          source checkout
           CI_EXIT_CODE=0
-          ls -l /
-          ls -l /src
           source .argoci/scripts/global_prologue.sh
-          ls -l /
-          ls -l /src
           until docker ps; do sleep 5; done
           make ci-preflight-checks || CI_EXIT_CODE=1
           /src/calico/.argoci/scripts/global_epilogue.sh
@@ -105,21 +101,15 @@ spec:
         command: [bash]
         workingDir: "/src"
         source: |
-          checkout
+          source checkout
           CI_EXIT_CODE=0
-          ls -l /
-          ls -l /src
           source .argoci/scripts/global_prologue.sh
-          ls -l /
-          ls -l /src
           cd node
           until docker ps; do sleep 5; done
           ../.argoci/scripts/run-and-monitor {{inputs.parameters.make-command}}.log make {{inputs.parameters.make-command}} || CI_EXIT_CODE=1
           gsutil cp "./report/{{inputs.parameters.report-file}}" "${CI_ARTIFACT_STEP_STORAGE}/node-{{inputs.parameters.make-command}}"
           /src/calico/.argoci/scripts/global_epilogue.sh
           exit ${CI_EXIT_CODE}
-        securityContext:
-          privileged: true
         volumeMounts:
           - name: src
             mountPath: /src
