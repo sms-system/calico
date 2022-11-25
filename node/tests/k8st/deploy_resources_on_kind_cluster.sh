@@ -119,7 +119,6 @@ ${kubectl} get svc
 function test_connection() {
   local svc="webserver-ipv$1"
   ${kubectl} describe svc $svc || true
-  ${kubectl} get nodes -o json || true
   output=$(${kubectl} exec client -- wget $svc -T 20 -O -)
   echo $output
   if [[ $output != *test-webserver* ]]; then
@@ -127,5 +126,6 @@ function test_connection() {
     exit 1
   fi
 }
+${kubectl} logs deployment/webserver || true
 test_connection 4
 test_connection 6
