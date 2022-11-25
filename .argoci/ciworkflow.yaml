@@ -66,6 +66,7 @@ spec:
         command: [bash]
         workingDir: "/src"
         source: |
+          checkout
           CI_EXIT_CODE=0
           ls -l /
           ls -l /src
@@ -104,6 +105,7 @@ spec:
         command: [bash]
         workingDir: "/src"
         source: |
+          checkout
           CI_EXIT_CODE=0
           ls -l /
           ls -l /src
