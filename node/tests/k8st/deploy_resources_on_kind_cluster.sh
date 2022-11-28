@@ -141,31 +141,14 @@ for webserver in "${webservers[@]}"; do
   ${kubectl} exec client -- wget $ip -T 20 -O -
   ${kubectl} logs ${webserver}
 done
-yq --version || true
 test_connection 4
 EXIT_CODE=0
 test_connection 6 || EXIT_CODE=1
 
-echo "RORY kind-worker ps auxw"
-docker exec kind-worker ps auxw || true
-echo "RORY kind-worker cat proxy"
-docker exec kind-worker cat /var/log/kube-proxy.log || true
-echo "RORY kind-worker journalctl"
-docker exec kind-worker journalctl || true
-echo "RORY=================================================================="
-echo "RORY kind-worker2 ps auxw"
-docker exec kind-worker2 ps auxw || true
-echo "RORY kind-worker2 cat proxy"
-docker exec kind-worker2 cat /var/log/kube-proxy.log || true
-echo "RORY kind-worker2 journalctl"
-docker exec kind-worker2 journalctl || true
-echo "RORY=================================================================="
-echo "RORY kind-worker3 ps auxw"
-docker exec kind-worker3 ps auxw || true
-echo "RORY kind-worker3 cat proxy"
-docker exec kind-worker3 cat /var/log/kube-proxy.log || true
-echo "RORY kind-worker3 journalctl"
-docker exec kind-worker journalctl || true
-echo "RORY=================================================================="
+kubeproxies=($(${kubectl} get pods --no-headers -o custom-columns=":metadata.name" | grep "kube-proxy"))
+for proxy in "${kubeproxies[@]}"; do
+  echo "RORY Logs for ${proxy}"
+  ${kubectl} logs ${proxy} || true
+done
 
 exit ${EXIT_CODE}
