@@ -143,7 +143,8 @@ for webserver in "${webservers[@]}"; do
 done
 yq --version || true
 test_connection 4
-test_connection 6 || true
+EXIT_CODE=0
+test_connection 6 || EXIT_CODE=1
 
 echo "RORY kind-worker ps auxw"
 docker exec kind-worker ps auxw || true
@@ -166,3 +167,5 @@ docker exec kind-worker3 cat /var/log/kube-proxy.log || true
 echo "RORY kind-worker3 journalctl"
 docker exec kind-worker journalctl || true
 echo "RORY=================================================================="
+
+exit ${EXIT_CODE}
