@@ -118,7 +118,10 @@ ${kubectl} get svc
 # Run ipv4 ipv6 connection test
 function test_connection() {
   local svc="webserver-ipv$1"
+  echo "RORY Service Test - $svc"
   ${kubectl} describe svc $svc || true
+  echo "RORY Endpoints - $svc"
+  ${kubectl} get endpoints $svc || true
   output=$(${kubectl} exec client -- wget $svc -T 20 -O -)
   echo $output
   if [[ $output != *test-webserver* ]]; then
@@ -132,16 +135,34 @@ echo "${webservers[@]}"
 for webserver in "${webservers[@]}"; do
   echo "RORY Webserver yaml - ${webserver}"
   output=$(${kubectl} get pod -o yaml ${webserver})
-  echo $output
+  echo "$output"
   ip=$(echo "$output" | yq '.status.podIPs[1].ip')
   echo "RORY IP is $ip"
-  output=$(${kubectl} exec client -- wget $ip -T 20 -O -)
-  echo $output
-  output=$(${kubectl} exec client -- wget "http://[$ip]" -T 20 -O -)
-  echo $output
-  output=$(${kubectl} exec client -- wget -6 "http://[$ip]" -T 20 -O -)
-  echo $output
+  ${kubectl} exec client -- wget $ip -T 20 -O -
+  ${kubectl} logs ${webserver}
 done
 yq --version || true
 test_connection 4
 test_connection 6
+
+echo "RORY kind-worker ps auxw"
+docker exec kind-worker ps auxw || true
+echo "RORY kind-worker cat proxy"
+docker exec kind-worker cat /var/log/kube-proxy.log || true
+echo "RORY kind-worker journalctl"
+docker exec kind-worker journalctl || true
+echo "RORY=================================================================="
+echo "RORY kind-worker2 ps auxw"
+docker exec kind-worker2 ps auxw || true
+echo "RORY kind-worker2 cat proxy"
+docker exec kind-worker2 cat /var/log/kube-proxy.log || true
+echo "RORY kind-worker2 journalctl"
+docker exec kind-worker2 journalctl || true
+echo "RORY=================================================================="
+echo "RORY kind-worker3 ps auxw"
+docker exec kind-worker3 ps auxw || true
+echo "RORY kind-worker3 cat proxy"
+docker exec kind-worker3 cat /var/log/kube-proxy.log || true
+echo "RORY kind-worker3 journalctl"
+docker exec kind-worker journalctl || true
+echo "RORY=================================================================="
