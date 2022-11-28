@@ -122,20 +122,17 @@ function test_connection() {
   ${kubectl} describe svc $svc || true
   echo "RORY Endpoints - $svc"
   ${kubectl} get endpoints $svc || true
-  output=$(${kubectl} exec client -- wget $svc -T 20 -O -)
+  output=$(${kubectl} exec client -- wget $svc -T 20 -O -) || true
   echo $output
-  if [[ $output != *test-webserver* ]]; then
-    echo "connection to $svc service failed"
-    exit 1
-  fi
+  # if [[ $output != *test-webserver* ]]; then
+  #   echo "connection to $svc service failed"
+  #   exit 1
+  # fi
 }
 ${kubectl} logs deployment/webserver || true
 webservers=$(${kubectl} get po -l app=webserver --no-headers -o custom-columns=":metadata.name" | head -1)
 echo "${webservers[@]}"
 for webserver in "${webservers[@]}"; do
-  echo "RORY Webserver yaml - ${webserver}"
-  output=$(${kubectl} get pod -o yaml ${webserver})
-  echo "$output"
   ip=$(echo "$output" | yq '.status.podIPs[1].ip')
   echo "RORY IP is $ip"
   ${kubectl} exec client -- wget $ip -T 20 -O -
@@ -151,4 +148,5 @@ for proxy in "${kubeproxies[@]}"; do
   ${kubectl} logs ${proxy} || true
 done
 
-exit ${EXIT_CODE}
+false
+exit 1
