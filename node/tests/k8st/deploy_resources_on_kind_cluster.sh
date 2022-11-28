@@ -127,12 +127,20 @@ function test_connection() {
   fi
 }
 ${kubectl} logs deployment/webserver || true
-webserver1=$(${kubectl} get po -n argoci -l app=webserver --no-headers -o custom-columns=":metadata.name" | head -1)
-webserver2=$(${kubectl} get po -n argoci -l app=webserver --no-headers -o custom-columns=":metadata.name" | tail -1)
-echo "RORY Webserver one yaml - ${webserver1}"
-${kubectl} get pod -o yaml ${webserver1}
-echo "RORY Webserver two yaml - ${webserver2}"
-${kubectl} get pod -o yaml ${webserver2}
+webservers=$(${kubectl} get po -l app=webserver --no-headers -o custom-columns=":metadata.name" | head -1)
+for webserver in "${webservers[@]}"; do
+  echo "RORY Webserver yaml - ${webserver}"
+  output=$(${kubectl} get pod -o yaml ${webserver})
+  echo $output
+  ip=$(echo "$output" | yq '.status.podIPs[1].ip')
+  echo "RORY IP is $ip"
+  output=$(${kubectl} exec client -- wget $ip -T 20 -O -)
+  echo $output
+  output=$(${kubectl} exec client -- wget "http://[$ip]" -T 20 -O -)
+  echo $output
+  output=$(${kubectl} exec client -- wget -6 "http://[$ip]" -T 20 -O -)
+  echo $output
+fi
 yq --version || true
 test_connection 4
 test_connection 6
