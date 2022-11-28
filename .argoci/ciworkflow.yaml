@@ -113,15 +113,6 @@ spec:
         volumeMounts:
           - name: src
             mountPath: /src
-      volumes:
-        - name: src
-          ephemeral:
-            volumeClaimTemplate:
-              spec:
-                accessModes: [ "ReadWriteOnce" ]
-                resources:
-                  requests:
-                    storage: 50Gi
       sidecars:
         - name: dind
           image: docker:20.10.17-dind
@@ -131,4 +122,32 @@ spec:
               value: ""
           securityContext:
             privileged: true
-          mirrorVolumeMounts: true
+          volumeMounts:
+            - name: src
+              mountPath: /src
+            - mountPath: /lib/modules
+              name: modules
+              readOnly: true
+            - mountPath: /sys/fs/cgroup
+              name: cgroup
+            - name: dind-storage
+              mountPath: /var/lib/docker
+      volumes:
+        - name: src
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: 50Gi
+        - name: modules
+          hostPath:
+            path: /lib/modules
+            type: Directory
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
+        - name: dind-storage
+          emptyDir: {}

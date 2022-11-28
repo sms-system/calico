@@ -127,5 +127,12 @@ function test_connection() {
   fi
 }
 ${kubectl} logs deployment/webserver || true
+webserver1=$(${kubectl} get po -n argoci -l app=webserver --no-headers -o custom-columns=":metadata.name" | head -1)
+webserver2=$(${kubectl} get po -n argoci -l app=webserver --no-headers -o custom-columns=":metadata.name" | tail -1)
+echo "RORY Webserver one yaml - ${webserver1}"
+${kubectl} get pod -o yaml ${webserver1}
+echo "RORY Webserver two yaml - ${webserver2}"
+${kubectl} get pod -o yaml ${webserver2}
+yq --version || true
 test_connection 4
 test_connection 6
