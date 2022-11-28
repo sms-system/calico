@@ -128,6 +128,7 @@ function test_connection() {
 }
 ${kubectl} logs deployment/webserver || true
 webservers=$(${kubectl} get po -l app=webserver --no-headers -o custom-columns=":metadata.name" | head -1)
+echo "${webservers[@]}"
 for webserver in "${webservers[@]}"; do
   echo "RORY Webserver yaml - ${webserver}"
   output=$(${kubectl} get pod -o yaml ${webserver})
@@ -140,7 +141,7 @@ for webserver in "${webservers[@]}"; do
   echo $output
   output=$(${kubectl} exec client -- wget -6 "http://[$ip]" -T 20 -O -)
   echo $output
-fi
+done
 yq --version || true
 test_connection 4
 test_connection 6
