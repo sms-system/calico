@@ -143,7 +143,7 @@ for webserver in "${webservers[@]}"; do
 done
 yq --version || true
 test_connection 4
-test_connection 6
+test_connection 6 || true
 
 echo "RORY kind-worker ps auxw"
 docker exec kind-worker ps auxw || true
