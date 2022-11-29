@@ -1,4 +1,5 @@
 #!/bin/bash -e
+set -x
 
 # test directory.
 TEST_DIR=./tests/k8st
