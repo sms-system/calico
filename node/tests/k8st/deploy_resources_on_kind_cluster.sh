@@ -145,7 +145,7 @@ for webserver in "${webservers[@]}"; do
   ${kubectl} logs ${webserver}
 done
 
-kubeproxies=($(${kubectl} get pods --no-headers -o custom-columns=":metadata.name" | grep "kube-proxy"))
+kubeproxies=($(${kubectl} get po --no-headers -o custom-columns=":metadata.name" | grep "kube-proxy")) || true
 echo "RORY KubeProxies ${kubeproxies[@]}"
 for proxy in "${kubeproxies[@]}"; do
   echo "RORY Logs for ${proxy}"
@@ -156,7 +156,7 @@ test_connection 4
 EXIT_CODE=0
 test_connection 6 || EXIT_CODE=1
 
-kubeproxies=($(${kubectl} get pods --no-headers -o custom-columns=":metadata.name" | grep "kube-proxy"))
+kubeproxies=($(${kubectl} get po --no-headers -o custom-columns=":metadata.name" | grep "kube-proxy")) || true
 echo "RORY KubeProxies ${kubeproxies[@]}"
 for proxy in "${kubeproxies[@]}"; do
   echo "RORY Logs for ${proxy}"
