@@ -25,8 +25,6 @@ spec:
               value: /src
             - name: CI_GIT_DIR
               value: calico
-            - name: CI_ARTIFACT_STORAGE
-              value: gs://argoci-artifacts/{{workflow.name}}
             - name: CI_ARTIFACT_STEP_STORAGE
               value: gs://argoci-artifacts/{{workflow.name}}/{{tasks.name}}
             - name: DOCKER_HOST
