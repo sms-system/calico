@@ -134,8 +134,13 @@ webservers=$(${kubectl} get po -l app=webserver --no-headers -o custom-columns="
 echo "${webservers[@]}"
 for webserver in "${webservers[@]}"; do
   ip=$(echo "$output" | yq '.status.podIPs[1].ip')
+  echo "$output" | yq '.status.podIPs'
   echo "RORY IP is $ip"
-  ${kubectl} exec client -- wget $ip -T 20 -O -
+  if [ "$ip" != ""]; then
+    if [ "$ip" != "null"]; then
+      ${kubectl} exec client -- wget $ip -T 20 -O -
+    fi
+  fi
   ${kubectl} logs ${webserver}
 done
 test_connection 4

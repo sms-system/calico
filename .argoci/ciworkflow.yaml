@@ -44,10 +44,10 @@ spec:
     - name: all-steps
       dag:
         tasks:
-          - name: prerequisites
-            template: preflight-checks-runner
+          # - name: prerequisites
+          #   template: preflight-checks-runner
           - name: node-tests
-            depends: "prerequisites"
+            # depends: "prerequisites"
             template: node-tests-runner
             arguments:
               parameters:
