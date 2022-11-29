@@ -42,10 +42,10 @@ spec:
     - name: all-steps
       dag:
         tasks:
-          # - name: prerequisites
-          #   template: preflight-checks-runner
+          - name: prerequisites
+            template: preflight-checks-runner
           - name: node-tests
-            # depends: "prerequisites"
+            depends: "prerequisites"
             template: node-tests-runner
             arguments:
               parameters:
@@ -54,7 +54,7 @@ spec:
                 - name: report-file
                   value: "{{item.REPORT_FILE}}"
             withItems:
-#              - {"MAKE_CMD": "ci", "REPORT_FILE": "nosetests.xml"}
+              - {"MAKE_CMD": "ci", "REPORT_FILE": "nosetests.xml"}
               - {"MAKE_CMD": "k8s-test", "REPORT_FILE": "k8s-tests.xml"}
 
     - name: preflight-checks-runner
@@ -87,6 +87,9 @@ spec:
           securityContext:
             privileged: true
           mirrorVolumeMounts: true
+          volumeMounts:
+            - name: dind-storage
+              mountPath: /var/lib/docker
 
     - name: node-tests-runner
       inputs:
@@ -120,14 +123,8 @@ spec:
               value: ""
           securityContext:
             privileged: true
+          mirrorVolumeMounts: true
           volumeMounts:
-            - name: src
-              mountPath: /src
-            - mountPath: /lib/modules
-              name: modules
-              readOnly: true
-            - mountPath: /sys/fs/cgroup
-              name: cgroup
             - name: dind-storage
               mountPath: /var/lib/docker
       volumes:
@@ -139,13 +136,5 @@ spec:
                 resources:
                   requests:
                     storage: 50Gi
-        - name: modules
-          hostPath:
-            path: /lib/modules
-            type: Directory
-        - name: cgroup
-          hostPath:
-            path: /sys/fs/cgroup
-            type: Directory
         - name: dind-storage
           emptyDir: {}

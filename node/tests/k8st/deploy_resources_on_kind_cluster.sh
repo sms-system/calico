@@ -1,5 +1,4 @@
 #!/bin/bash -e
-set -x
 
 # test directory.
 TEST_DIR=./tests/k8st
@@ -119,50 +118,12 @@ ${kubectl} get svc
 # Run ipv4 ipv6 connection test
 function test_connection() {
   local svc="webserver-ipv$1"
-  echo "RORY Service Test - $svc"
-  ${kubectl} describe svc $svc || true
-  echo "RORY Endpoints - $svc"
-  ${kubectl} get endpoints $svc || true
-  output=$(${kubectl} exec client -- wget $svc -T 20 -O -) || true
+  output=$(${kubectl} exec client -- wget $svc -T 5 -O -)
   echo $output
-  # if [[ $output != *test-webserver* ]]; then
-  #   echo "connection to $svc service failed"
-  #   exit 1
-  # fi
-}
-${kubectl} logs deployment/webserver || true
-webservers=($(${kubectl} get po -l app=webserver --no-headers -o custom-columns=":metadata.name"))
-echo "${webservers[@]}"
-for webserver in "${webservers[@]}"; do
-  output=$(${kubectl} get pod -o yaml ${webserver})
-  ip=$(echo "$output" | yq '.status.podIPs[1].ip')
-  echo "$output" | yq '.status.podIPs'
-  echo "RORY IP is $ip"
-  if [ "$ip" != "" ]; then
-    if [ "$ip" != "null" ]; then
-      ${kubectl} exec client -- wget $ip -T 20 -O -
-    fi
+  if [[ $output != *test-webserver* ]]; then
+    echo "connection to $svc service failed"
+    exit 1
   fi
-  ${kubectl} logs ${webserver}
-done
-
-kubeproxies=($(${kubectl} get po -n kube-system --no-headers -o custom-columns=":metadata.name" | grep "kube-proxy")) || true
-echo "RORY KubeProxies ${kubeproxies[@]}"
-for proxy in "${kubeproxies[@]}"; do
-  echo "RORY Logs for ${proxy}"
-  ${kubectl} logs -n kube-system ${proxy} || true
-done
-
+}
 test_connection 4
-EXIT_CODE=0
-test_connection 6 || EXIT_CODE=1
-
-kubeproxies=($(${kubectl} get po -n kube-system --no-headers -o custom-columns=":metadata.name" | grep "kube-proxy")) || true
-echo "RORY KubeProxies ${kubeproxies[@]}"
-for proxy in "${kubeproxies[@]}"; do
-  echo "RORY Logs for ${proxy}"
-  ${kubectl} logs -n kube-system ${proxy} || true
-done
-
-false
-exit 1
+test_connection 6
