@@ -8,6 +8,9 @@ metadata:
     branch: argoci-testing
 spec:
   entrypoint: all-steps
+  volumes:
+    - name: dind-storage
+      emptyDir: {}
   arguments:
     parameters:
       - name: reponame
@@ -136,5 +139,3 @@ spec:
                 resources:
                   requests:
                     storage: 50Gi
-        - name: dind-storage
-          emptyDir: {}
