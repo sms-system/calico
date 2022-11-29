@@ -130,24 +130,34 @@ function test_connection() {
   # fi
 }
 ${kubectl} logs deployment/webserver || true
-webservers=$(${kubectl} get po -l app=webserver --no-headers -o custom-columns=":metadata.name" | head -1)
+webservers=($(${kubectl} get po -l app=webserver --no-headers -o custom-columns=":metadata.name"))
 echo "${webservers[@]}"
 for webserver in "${webservers[@]}"; do
+  output=$(${kubectl} get pod -o yaml ${webserver})
   ip=$(echo "$output" | yq '.status.podIPs[1].ip')
   echo "$output" | yq '.status.podIPs'
   echo "RORY IP is $ip"
-  if [ "$ip" != ""]; then
-    if [ "$ip" != "null"]; then
+  if [ "$ip" != "" ]; then
+    if [ "$ip" != "null" ]; then
       ${kubectl} exec client -- wget $ip -T 20 -O -
     fi
   fi
   ${kubectl} logs ${webserver}
 done
+
+kubeproxies=($(${kubectl} get pods --no-headers -o custom-columns=":metadata.name" | grep "kube-proxy"))
+echo "RORY KubeProxies ${kubeproxies[@]}"
+for proxy in "${kubeproxies[@]}"; do
+  echo "RORY Logs for ${proxy}"
+  ${kubectl} logs ${proxy} || true
+done
+
 test_connection 4
 EXIT_CODE=0
 test_connection 6 || EXIT_CODE=1
 
 kubeproxies=($(${kubectl} get pods --no-headers -o custom-columns=":metadata.name" | grep "kube-proxy"))
+echo "RORY KubeProxies ${kubeproxies[@]}"
 for proxy in "${kubeproxies[@]}"; do
   echo "RORY Logs for ${proxy}"
   ${kubectl} logs ${proxy} || true
