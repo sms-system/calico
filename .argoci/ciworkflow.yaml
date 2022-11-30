@@ -8,6 +8,8 @@ metadata:
     branch: argoci-testing
 spec:
   entrypoint: all-steps
+  nodeSelector:
+    role: docker-argoci
   volumes:
     - name: dind-storage
       emptyDir: {}

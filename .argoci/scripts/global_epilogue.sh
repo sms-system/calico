@@ -12,8 +12,10 @@ repo_dir=$my_dir/../..
 cd "$repo_dir/artifacts" || exit 1
 
 for file in *; do
+  echo "Uploading file to Artifact storage - '${file}'"
   gsutil cp "$file" "${CI_ARTIFACT_STEP_STORAGE}/$file"
-  if [ "${file: -4}" == ".xml" ]; then
+  if [[ ${file} =~ .*\.xml ]]; then
+    echo "File is of type XML - Converting to HTML Test results and uploading"
     if ! command -v npm &> /dev/null; then
       curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
       apt-get install -y nodejs
