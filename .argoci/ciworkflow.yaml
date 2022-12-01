@@ -162,7 +162,6 @@ spec:
         source: |
           source checkout
           mkdir -p "$HOME/secrets" && printenv "google-service-account-key.json" > $HOME/secrets/secret.google-service-account-key.json
-          cd felix
           source .argoci/scripts/global_prologue.sh
           source .argoci/scripts/felix/bpf-ut-fv-tests-on-new-kernel.sh
           /src/calico/.argoci/scripts/global_epilogue.sh

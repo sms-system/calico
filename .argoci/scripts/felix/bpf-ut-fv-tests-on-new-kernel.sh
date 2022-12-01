@@ -8,6 +8,9 @@ echo VM_PREFIX=${VM_PREFIX}
 export NUM_FV_BATCHES=8
 export CI_EXIT_CODE=0
 
+cd felix
+mkdir artifacts
+
 # Create initial VMs
 ./.semaphore/create-test-vms ${VM_PREFIX}
 status=$?
