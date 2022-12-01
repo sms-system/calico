@@ -8,8 +8,6 @@ echo VM_PREFIX=${VM_PREFIX}
 export NUM_FV_BATCHES=8
 export CI_EXIT_CODE=0
 
-cd felix
-
 # Create initial VMs
 ./.semaphore/create-test-vms ${VM_PREFIX}
 status=$?
@@ -17,7 +15,8 @@ if [ $status -ne 0 ]; then
     # VM Creation failed - Exit script now and global_epilogue will upload the artifacts
     # Set CI_EXIT_CODE so we know to mark the failure
     export CI_EXIT_CODE=1
-    exit
+    ./.semaphore/publish-artifacts-argoci
+    return
 fi
 
 ./.semaphore/run-tests-on-vms ${VM_PREFIX}

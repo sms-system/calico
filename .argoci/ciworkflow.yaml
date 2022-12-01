@@ -147,7 +147,7 @@ spec:
                     storage: 50Gi
 
 #   https://github.com/projectcalico/calico/blob/84ff1cc7d6db7ea53583a1af166c12a2e2b45677/.semaphore/semaphore.yml#L384-L414
-    - name: felix-bpf-ut-fv-tests-on-new-kernel-runner"
+    - name: felix-bpf-ut-fv-tests-on-new-kernel-runner
       script:
         image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:v0.1
         imagePullPolicy: Always
@@ -158,10 +158,11 @@ spec:
             name: google-service-account-for-gce
         env:
           - name: REPO_NAME
-            value: {{workflow.parameters.reponame}}
+            value: "{{workflow.parameters.reponame}}"
         source: |
           source checkout
           mkdir -p "$HOME/secrets" && printenv "google-service-account-key.json" > $HOME/secrets/secret.google-service-account-key.json
+          cd felix
           source .argoci/scripts/global_prologue.sh
           source .argoci/scripts/felix/bpf-ut-fv-tests-on-new-kernel.sh
           /src/calico/.argoci/scripts/global_epilogue.sh
