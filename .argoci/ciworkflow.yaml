@@ -38,11 +38,6 @@ spec:
               value: {{workflow.parameters.repoURL}}
             - name: CI_GIT_CLONED_BRANCH
               value: {{workflow.parameters.branch}}
-          envFrom: 
-            - secretRef:
-                name: docker-hub
-            - secretRef:
-                name: marvin-github-ssh-private-key
   templates:
     - name: all-steps
       dag:
@@ -61,10 +56,19 @@ spec:
           #   withItems:
           #     - {"MAKE_CMD": "ci", "REPORT_FILE": "nosetests.xml"}
           #     - {"MAKE_CMD": "k8s-test", "REPORT_FILE": "k8s-tests.xml"}
-          - name: felix-bpf-ut-fv-tests-on-new-kernel
+          # - name: felix-bpf-ut-fv-tests-on-new-kernel
+          #   depends: "prerequisites"
+          #   template: felix-bpf-ut-fv-tests-on-new-kernel-runner
+          - name: felix-fv-tests
             # depends: "prerequisites"
-            template: felix-bpf-ut-fv-tests-on-new-kernel-runner
-
+            template: felix-fv-tests-runner
+            arguments:
+              parameters:
+                - name: total-executors
+                  value: "3"
+                - name: executor
+                  value: "{{item}}"
+            withItems: ['1', '2', '3']
 
     - name: preflight-checks-runner
       script:
@@ -72,9 +76,13 @@ spec:
         imagePullPolicy: Always
         command: [bash]
         workingDir: "/src"
+        envFrom:
+          - secretRef:
+              name: docker-hub
+          - secretRef:
+              name: marvin-github-ssh-private-key
         source: |
           source checkout
-          CI_EXIT_CODE=0
           source .argoci/scripts/global_prologue.sh
           until docker ps; do sleep 5; done
           make ci-preflight-checks || CI_EXIT_CODE=1
@@ -110,9 +118,13 @@ spec:
         imagePullPolicy: Always
         command: [bash]
         workingDir: "/src"
+        envFrom:
+          - secretRef:
+              name: docker-hub
+          - secretRef:
+              name: marvin-github-ssh-private-key
         source: |
           source checkout
-          export CI_EXIT_CODE=0
           source .argoci/scripts/global_prologue.sh
           cd node
           until docker ps; do sleep 5; done
@@ -153,17 +165,63 @@ spec:
         imagePullPolicy: Always
         command: [bash]
         workingDir: "/src"
-        envFrom: 
-          - secretRef:
-            name: google-service-account-for-gce
         env:
           - name: REPO_NAME
-            value: "{{workflow.parameters.reponame}}"
+            value: "felix"
+        envFrom:
+          - secretRef:
+              name: docker-hub
+          - secretRef:
+              name: marvin-github-ssh-private-key
+          - secretRef:
+              name: google-service-account-for-gce
         source: |
           source checkout
-          mkdir -p "$HOME/secrets" && printenv "google-service-account-key.json" > $HOME/secrets/secret.google-service-account-key.json
+          mkdir -p "$HOME/secrets" && printenv "secret.google-service-account-key.json" > $HOME/secrets/secret.google-service-account-key.json
           source .argoci/scripts/global_prologue.sh
           source .argoci/scripts/felix/bpf-ut-fv-tests-on-new-kernel.sh
+          /src/calico/.argoci/scripts/global_epilogue.sh
+          exit ${CI_EXIT_CODE}
+        volumeMounts:
+          - name: src
+            mountPath: /src
+      volumes:
+        - name: src
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: 50Gi
+
+#     https://github.com/projectcalico/calico/blob/84ff1cc7d6db7ea53583a1af166c12a2e2b45677/.semaphore/semaphore.yml#L330-L382
+    - name: felix-fv-tests
+      inputs:
+        parameters:
+          - name: total-executors
+          - name: executor
+      script:
+        image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:v0.1
+        imagePullPolicy: Always
+        command: [bash]
+        workingDir: "/src"
+        env:
+          - name: REPO_NAME
+            value: "felix"
+          - name: JOB_COUNT
+            value: '{{inputs.parameters.total_executors}}'
+          - name: JOB_INDEX
+            value: '{{inputs.parameters.executor}}'
+        envFrom:
+          - secretRef:
+              name: docker-hub
+          - secretRef:
+              name: marvin-github-ssh-private-key
+        source: |
+          source checkout
+          source .argoci/scripts/global_prologue.sh
+          source .argoci/scripts/felix/fv-tests.sh
           /src/calico/.argoci/scripts/global_epilogue.sh
           exit ${CI_EXIT_CODE}
         volumeMounts:

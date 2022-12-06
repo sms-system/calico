@@ -6,7 +6,6 @@ export ZONE=europe-west3-c
 export VM_PREFIX=argoci-${REPO_NAME}-${SHORT_WORKFLOW_ID}-
 echo VM_PREFIX=${VM_PREFIX}
 export NUM_FV_BATCHES=8
-export CI_EXIT_CODE=0
 
 cd felix
 mkdir artifacts

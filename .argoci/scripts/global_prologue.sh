@@ -8,3 +8,5 @@ echo $DOCKERHUB_PASSWORD | docker login --username "$DOCKERHUB_USERNAME" --passw
 cd ~
 openssl rand -writerand .rnd
 cd -
+
+export CI_EXIT_CODE=0
