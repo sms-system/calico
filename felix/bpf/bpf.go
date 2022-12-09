@@ -219,19 +219,24 @@ func MaybeMountBPFfs() (string, error) {
 	var err error
 	bpffsPath := DefaultBPFfsPath
 
+	log.Info("Running isMount")
 	mnt, err := isMount(DefaultBPFfsPath)
 	if err != nil {
 		return "", err
 	}
 
+	log.Info("Running isBPF")
 	fsBPF, err := isBPF(DefaultBPFfsPath)
 	if err != nil {
 		return "", err
 	}
 
+	log.Info("Running checkMount")
 	if !mnt {
+		log.Info("Running attemptMount")
 		err = mountBPFfs(DefaultBPFfsPath)
 	} else if !fsBPF {
+		log.Info("Running fsBPF")
 		var runfsBPF bool
 
 		bpffsPath = "/var/run/calico/bpffs"
@@ -240,11 +245,13 @@ func MaybeMountBPFfs() (string, error) {
 			return "", err
 		}
 
+		log.Info("Running runfsBPF")
 		runfsBPF, err = isBPF(bpffsPath)
 		if err != nil {
 			return "", err
 		}
 
+		log.Info("Running mountBPFfsAgain")
 		if !runfsBPF {
 			err = mountBPFfs(bpffsPath)
 		}

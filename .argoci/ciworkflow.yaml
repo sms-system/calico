@@ -303,9 +303,13 @@ spec:
           ephemeral:
             volumeClaimTemplate:
               spec:
+                accessModes: [ "ReadWriteOnce" ]
                 dataSource:
                   kind: PersistentVolumeClaim
                   name: felix-volume
+                resources:
+                  requests:
+                    storage: 50Gi
         - name: modules
           hostPath:
             path: /lib/modules
@@ -314,3 +318,11 @@ spec:
           hostPath:
             path: /sys/fs/cgroup
             type: Directory
+
+# task 'calico-ci-96m7l.felix-fv-tests(0:1)' errored: Pod "calico-ci-96m7l-felix-fv-tests-runner-2116736778" is invalid: 
+# [spec.volumes[2].ephemeral.volumeClaimTemplate.spec.accessModes: 
+# Required value: at least 1 access mode is required, 
+# spec.volumes[2].ephemeral.volumeClaimTemplate.spec.resources[storage]: Required value,
+# spec.containers[0].volumeMounts[1].name: Not found: "src",
+# spec.containers[1].volumeMounts[0].name: Not found: "src", 
+# spec.containers[2].volumeMounts[1].name: Not found: "src"]
