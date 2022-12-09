@@ -208,6 +208,7 @@ spec:
                   requests:
                     storage: 50Gi
 
+#   https://github.com/projectcalico/calico/blob/84ff1cc7d6db7ea53583a1af166c12a2e2b45677/.semaphore/semaphore.yml#L199-L234
     - name: felix-build-runner
       script:
         image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:20.04
@@ -232,11 +233,6 @@ spec:
         volumeMounts:
           - name: felix-volume
             mountPath: /src
-          - mountPath: /lib/modules
-            name: modules
-            readOnly: true
-          - mountPath: /sys/fs/cgroup
-            name: cgroup
       sidecars:
         - name: dind
           image: docker:20.10.17-dind

@@ -1,16 +1,26 @@
 #! /bin/bash
 
+cleanup() {
+    cp -a /src/calico/felix/report/. /src/calico/felix/artifacts
+    ./.semaphore/publish-artifacts-argoci
+}
+
+
 checkExitCode() {
-    if [ $1 -ne 0 ]; then
+    last_command=$1
+    exit_code=$2
+    if [ $2 -ne 0 ]; then
         export CI_EXIT_CODE=1
+        echo "[ ERR] '${last_command}' failed"
         return 1
     fi
+    echo "[INFO] '${last_command}' succeeded"
 }
 
 cd felix
 
 make build image fv-prereqs
-checkExitCode $? || return 0
+checkExitCode "!!" $? || return 0
 
 # 'cache store bin-${SEMAPHORE_GIT_SHA} bin'
 # 'cache store fv.test-${SEMAPHORE_GIT_SHA} fv/fv.test'
