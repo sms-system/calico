@@ -14,7 +14,11 @@ checkExitCode() {
 }
 
 cd felix
-sudo modprobe ipip
+
+docker load -i /src/dockerimages/calico-felix.tar
+docker tag calico/felix:latest-amd64 felix:latest-amd64
+docker load -i /src/dockerimages/felixtest-typha.tar
+docker tag felix-test/typha:latest-amd64 typha:latest-amd64
 
 make check-wireguard
 checkExitCode $? || return 0

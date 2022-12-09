@@ -10,9 +10,6 @@ spec:
   entrypoint: all-steps
   nodeSelector:
     role: docker-argoci
-  volumes:
-    - name: dind-storage
-      emptyDir: {}
   arguments:
     parameters:
       - name: reponame
@@ -21,6 +18,19 @@ spec:
         value: git@github.com:projectcalico/calico.git
       - name: branch
         value: argoci-testing
+  volumeClaimGC:
+    strategy: OnWorkflowCompletion
+  volumeClaimTemplates:
+  - metadata:
+      name: felix-volume
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 50Gi
+  volumes:
+    - name: dind-storage
+      emptyDir: {}
   templateDefaults:
     podSpecPatch: |-
       containers:
@@ -59,8 +69,11 @@ spec:
           # - name: felix-bpf-ut-fv-tests-on-new-kernel
           #   depends: "prerequisites"
           #   template: felix-bpf-ut-fv-tests-on-new-kernel-runner
-          - name: felix-fv-tests
+          - name: felix-build
             # depends: "prerequisites"
+            template: felix-build-runner
+          - name: felix-fv-tests
+            depends: "felix-build"
             template: felix-fv-tests-runner
             arguments:
               parameters:
@@ -195,14 +208,57 @@ spec:
                   requests:
                     storage: 50Gi
 
+    - name: felix-build-runner
+      script:
+        image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:20.04
+        imagePullPolicy: Always
+        command: [bash]
+        workingDir: "/src"
+        env:
+          - name: REPO_NAME
+            value: "felix"
+        envFrom:
+          - secretRef:
+              name: docker-hub
+          - secretRef:
+              name: marvin-github-ssh-private-key
+        source: |
+          source checkout
+          until docker ps; do sleep 5; done
+          source .argoci/scripts/global_prologue.sh
+          source .argoci/scripts/felix/fv-build.sh
+          /src/calico/.argoci/scripts/global_epilogue.sh
+          exit ${CI_EXIT_CODE}
+        volumeMounts:
+          - name: felix-volume
+            mountPath: /src
+          - mountPath: /lib/modules
+            name: modules
+            readOnly: true
+          - mountPath: /sys/fs/cgroup
+            name: cgroup
+      sidecars:
+        - name: dind
+          image: docker:20.10.17-dind
+          command: [dockerd-entrypoint.sh]
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          securityContext:
+            privileged: true
+          mirrorVolumeMounts: true
+          volumeMounts:
+            - name: dind-storage
+              mountPath: /var/lib/docker
+
 #     https://github.com/projectcalico/calico/blob/84ff1cc7d6db7ea53583a1af166c12a2e2b45677/.semaphore/semaphore.yml#L330-L382
-    - name: felix-fv-tests
+    - name: felix-fv-tests-runner
       inputs:
         parameters:
           - name: total-executors
           - name: executor
       script:
-        image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:v0.1
+        image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:20.04
         imagePullPolicy: Always
         command: [bash]
         workingDir: "/src"
@@ -210,7 +266,7 @@ spec:
           - name: REPO_NAME
             value: "felix"
           - name: JOB_COUNT
-            value: '{{inputs.parameters.total_executors}}'
+            value: '{{inputs.parameters.total-executors}}'
           - name: JOB_INDEX
             value: '{{inputs.parameters.executor}}'
         envFrom:
@@ -220,6 +276,7 @@ spec:
               name: marvin-github-ssh-private-key
         source: |
           source checkout
+          until docker ps; do sleep 5; done
           source .argoci/scripts/global_prologue.sh
           source .argoci/scripts/felix/fv-tests.sh
           /src/calico/.argoci/scripts/global_epilogue.sh
@@ -227,12 +284,37 @@ spec:
         volumeMounts:
           - name: src
             mountPath: /src
+          - mountPath: /lib/modules
+            name: modules
+            readOnly: true
+          - mountPath: /sys/fs/cgroup
+            name: cgroup
+      sidecars:
+        - name: dind
+          image: docker:20.10.17-dind
+          command: [dockerd-entrypoint.sh]
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          securityContext:
+            privileged: true
+          mirrorVolumeMounts: true
+          volumeMounts:
+            - name: dind-storage
+              mountPath: /var/lib/docker
       volumes:
         - name: src
           ephemeral:
             volumeClaimTemplate:
               spec:
-                accessModes: [ "ReadWriteOnce" ]
-                resources:
-                  requests:
-                    storage: 50Gi
+                dataSource:
+                  kind: PersistentVolumeClaim
+                  name: felix-volume
+        - name: modules
+          hostPath:
+            path: /lib/modules
+            type: Directory
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
