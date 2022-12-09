@@ -7,20 +7,17 @@ cleanup() {
 
 
 checkExitCode() {
-    last_command=$1
-    exit_code=$2
-    if [ $2 -ne 0 ]; then
+    if [ $1 -ne 0 ]; then
         export CI_EXIT_CODE=1
-        echo "[ ERR] '${last_command}' failed"
+        cleanup
         return 1
     fi
-    echo "[INFO] '${last_command}' succeeded"
 }
 
 cd felix
 
 make build image fv-prereqs
-checkExitCode "!!" $? || return 0
+checkExitCode $? || return 0
 
 # 'cache store bin-${SEMAPHORE_GIT_SHA} bin'
 # 'cache store fv.test-${SEMAPHORE_GIT_SHA} fv/fv.test'
@@ -38,3 +35,5 @@ checkExitCode $? || return 0
 checkExitCode $? || return 0
 ../.semaphore/run-and-monitor k8sfv-no-typha.log make k8sfv-test JUST_A_MINUTE=true USE_TYPHA=false
 checkExitCode $? || return 0
+
+cleanup

@@ -182,21 +182,25 @@ type BPFLib struct {
 }
 
 func NewBPFLib(binDir string) (*BPFLib, error) {
+	log.Info("Looking for bpftool")
 	_, err := exec.LookPath("bpftool")
 	if err != nil {
 		return nil, errors.New("bpftool not found in $PATH")
 	}
 
+	log.Info("Running MaybeMountBPFfs")
 	bpfDir, err := MaybeMountBPFfs()
 	if err != nil {
 		return nil, err
 	}
 
+	log.Info("Running MaybeMountCgroupV2")
 	cgroupV2Dir, err := MaybeMountCgroupV2()
 	if err != nil {
 		return nil, err
 	}
 
+	log.Info("Everything passed")
 	calicoDir := filepath.Join(bpfDir, bpfCalicoSubdir)
 	xdpDir := filepath.Join(calicoDir, "xdp")
 	sockmapDir := filepath.Join(calicoDir, "sockmap")

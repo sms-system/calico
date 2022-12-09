@@ -76,7 +76,7 @@ func setup() {
 		log.Info("Running with real BPF lib")
 		bpfDP, err = NewBPFLib("../bpf-apache/bin/")
 		if err != nil {
-			log.Fatalf("Error setting up bpf: %v", err)
+			log.Errorf("Error setting up bpf: %s", err)
 		}
 	} else {
 		log.WithFields(log.Fields{"root": root, "xdp": xdp, "hasbpftool": hasBPFtool}).Info("Running with mock BPF lib")
