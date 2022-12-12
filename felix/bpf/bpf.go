@@ -188,19 +188,16 @@ func NewBPFLib(binDir string) (*BPFLib, error) {
 		return nil, errors.New("bpftool not found in $PATH")
 	}
 
-	log.Info("Running MaybeMountBPFfs")
 	bpfDir, err := MaybeMountBPFfs()
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info("Running MaybeMountCgroupV2")
 	cgroupV2Dir, err := MaybeMountCgroupV2()
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info("Everything passed")
 	calicoDir := filepath.Join(bpfDir, bpfCalicoSubdir)
 	xdpDir := filepath.Join(calicoDir, "xdp")
 	sockmapDir := filepath.Join(calicoDir, "sockmap")
@@ -219,24 +216,19 @@ func MaybeMountBPFfs() (string, error) {
 	var err error
 	bpffsPath := DefaultBPFfsPath
 
-	log.Info("Running isMount")
 	mnt, err := isMount(DefaultBPFfsPath)
 	if err != nil {
 		return "", err
 	}
 
-	log.Info("Running isBPF")
 	fsBPF, err := isBPF(DefaultBPFfsPath)
 	if err != nil {
 		return "", err
 	}
 
-	log.Info("Running checkMount")
 	if !mnt {
-		log.Info("Running attemptMount")
 		err = mountBPFfs(DefaultBPFfsPath)
 	} else if !fsBPF {
-		log.Info("Running fsBPF")
 		var runfsBPF bool
 
 		bpffsPath = "/var/run/calico/bpffs"
@@ -245,13 +237,11 @@ func MaybeMountBPFfs() (string, error) {
 			return "", err
 		}
 
-		log.Info("Running runfsBPF")
 		runfsBPF, err = isBPF(bpffsPath)
 		if err != nil {
 			return "", err
 		}
 
-		log.Info("Running mountBPFfsAgain")
 		if !runfsBPF {
 			err = mountBPFfs(bpffsPath)
 		}
