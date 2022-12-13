@@ -71,11 +71,17 @@ func setup() {
 	hasBPFtool := err == nil
 
 	_, forceRealLib := os.LookupEnv("BPF_FORCE_REAL_LIB")
-	_, forceMockLib := os.LookupEnv("BPF_FORCE_MOCK_LIB")
 
-	if forceRealLib || (!forceMockLib && root && xdp && hasBPFtool) {
+	if forceRealLib || (root && xdp && hasBPFtool) {
 		log.Info("Running with real BPF lib")
-		bpfDP, _ = NewBPFLib("../bpf-apache/bin/")
+		bpfDP, err = NewBPFLib("../bpf-apache/bin/")
+		if err != nil {
+			log.Warn("Failed to initialise real BPF Lib")
+			if !forceRealLib {
+				log.WithFields(log.Fields{"root": root, "xdp": xdp, "hasbpftool": hasBPFtool}).Warn("Falling back to running with mock BPF lib")
+				bpfDP = NewMockBPFLib("../bpf-apache/bin/")
+			}
+		}
 	} else {
 		log.WithFields(log.Fields{"root": root, "xdp": xdp, "hasbpftool": hasBPFtool}).Info("Running with mock BPF lib")
 		bpfDP = NewMockBPFLib("../bpf-apache/bin/")

@@ -230,8 +230,6 @@ spec:
         env:
           - name: REPO_NAME
             value: "felix"
-          - name: BPF_FORCE_MOCK_LIB
-            value: 'true'
         envFrom:
           - secretRef:
               name: docker-hub
