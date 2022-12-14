@@ -22,7 +22,7 @@ docker tag felix-test/typha:latest-amd64 typha:latest-amd64
 
 make check-wireguard
 checkExitCode $? || return 0
-../.argoci/scripts/run-and-monitor fv-{{inputs.parameters.executor}}.log make fv-no-prereqs FV_BATCHES_TO_RUN="${JOB_INDEX}" FV_NUM_BATCHES=${JOB_COUNT}
+../.argoci/scripts/run-and-monitor fv-${JOB_INDEX}.log make fv-no-prereqs FV_BATCHES_TO_RUN="${JOB_INDEX}" FV_NUM_BATCHES=${JOB_COUNT}
 checkExitCode $? || return 0
 
 cleanup

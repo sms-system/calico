@@ -25,6 +25,7 @@ spec:
       name: felix-volume
     spec:
       accessModes: [ "ReadWriteOnce" ]
+      storageClassName: standard-rwo
       resources:
         requests:
           storage: 50Gi
@@ -42,6 +43,10 @@ spec:
     - name: bpf
       hostPath:
         path: /sys/fs/bpf
+        type: Directory
+    - name: kernel
+      hostPath:
+        path: /sys/kernel
         type: Directory
   templateDefaults:
     podSpecPatch: |-
@@ -179,6 +184,7 @@ spec:
             volumeClaimTemplate:
               spec:
                 accessModes: [ "ReadWriteOnce" ]
+                storageClassName: standard-rwo
                 resources:
                   requests:
                     storage: 50Gi
@@ -216,12 +222,16 @@ spec:
             volumeClaimTemplate:
               spec:
                 accessModes: [ "ReadWriteOnce" ]
+                storageClassName: standard-rwo
                 resources:
                   requests:
                     storage: 50Gi
 
 #   https://github.com/projectcalico/calico/blob/84ff1cc7d6db7ea53583a1af166c12a2e2b45677/.semaphore/semaphore.yml#L199-L234
     - name: felix-build-runner
+      metadata:
+        labels:
+          step: '{{workflow.name}}-felix-build'
       script:
         image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:20.04
         imagePullPolicy: Always
@@ -245,8 +255,8 @@ spec:
         volumeMounts:
           - name: felix-volume
             mountPath: /src
-          - name: bpf
-            mountPath: /sys/fs/bpf
+          - name: modules
+            mountPath: /lib/modules
       sidecars:
         - name: dind
           image: docker:20.10.17-dind
@@ -256,8 +266,6 @@ spec:
               value: ""
           securityContext:
             privileged: true
-            seccompProfile:
-              type: Unconfined
           mirrorVolumeMounts: true
           volumeMounts:
             - name: dind-storage
@@ -265,6 +273,12 @@ spec:
 
 #     https://github.com/projectcalico/calico/blob/84ff1cc7d6db7ea53583a1af166c12a2e2b45677/.semaphore/semaphore.yml#L330-L382
     - name: felix-fv-tests-runner
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  step: '{{workflow.name}}-felix-build'
       inputs:
         parameters:
           - name: total-executors
@@ -301,6 +315,10 @@ spec:
             readOnly: true
           - mountPath: /sys/fs/cgroup
             name: cgroup
+          - mountPath: /sys/kernel
+            name: kernel
+          - name: tmp
+            mountPath: /tmp
       sidecars:
         - name: dind
           image: docker:20.10.17-dind
@@ -320,10 +338,13 @@ spec:
             volumeClaimTemplate:
               spec:
                 accessModes: [ "ReadWriteOnce" ]
+                storageClassName: standard-rwo
                 dataSource:
                   kind: PersistentVolumeClaim
-                  name: felix-volume
+                  name: '{{workflow.name}}-felix-volume'
                 resources:
                   requests:
                     storage: 50Gi
+        - name: tmp
+          emptyDir: { }
 
