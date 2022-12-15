@@ -2,6 +2,7 @@
 
 cleanup() {
     ./.semaphore/collect-artifacts
+    cp -a /src/calico/felix/report/. /src/calico/felix/artifacts
     ./.semaphore/publish-artifacts-argoci
 }
 

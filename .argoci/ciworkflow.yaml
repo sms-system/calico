@@ -8,6 +8,8 @@ metadata:
     branch: argoci-testing
 spec:
   entrypoint: all-steps
+  podGC:
+    strategy: OnWorkflowCompletion
   nodeSelector:
     role: docker-argoci
   arguments:
@@ -229,9 +231,15 @@ spec:
 
 #   https://github.com/projectcalico/calico/blob/84ff1cc7d6db7ea53583a1af166c12a2e2b45677/.semaphore/semaphore.yml#L199-L234
     - name: felix-build-runner
-      metadata:
-        labels:
-          step: '{{workflow.name}}-felix-build'
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: topology.kubernetes.io/zone
+                    operator: In
+                    values:
+                    - us-central1-f
       script:
         image: gcr.io/tigera-cc-dev/ci-base/calico-ci-image:20.04
         imagePullPolicy: Always
@@ -274,11 +282,14 @@ spec:
 #     https://github.com/projectcalico/calico/blob/84ff1cc7d6db7ea53583a1af166c12a2e2b45677/.semaphore/semaphore.yml#L330-L382
     - name: felix-fv-tests-runner
       affinity:
-        podAffinity:
+        nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  step: '{{workflow.name}}-felix-build'
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: topology.kubernetes.io/zone
+                    operator: In
+                    values:
+                    - us-central1-f
       inputs:
         parameters:
           - name: total-executors
@@ -300,6 +311,8 @@ spec:
               name: docker-hub
           - secretRef:
               name: marvin-github-ssh-private-key
+        securityContext:
+          privileged: true
         source: |
           source checkout
           until docker ps; do sleep 5; done
